@@ -6,7 +6,7 @@ $inputs = json_decode(file_get_contents('php://input'), true);
 if(!isset($inputs['deviceID']) || !isset($inputs['deviceName']) || !isset($inputs['deviceModel']) || !isset($inputs['deviceManufacturer'])) {
     die("You are doing wrong!");
 }
-$plaintext = $inputs['deviceID']; // "2A78049C-D72C-411D-ADDC-C43BCCD42E0C"; //Take from POST data
+$plaintext = $inputs['deviceID']; //Take from POST data
 $deviceName = $inputs['deviceName'];
 $deviceModel = $inputs['deviceModel'];
 $deviceManufacturer = $inputs['deviceManufacturer'];

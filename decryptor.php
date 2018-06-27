@@ -8,7 +8,6 @@ if(!isset($inputs['cipher'])) {
     die("You are doing wrong!");
 }
 $ciphertext = $inputs['cipher'];
-// $ciphertext = 'WDbCTmXbL994Pz/xTw/9DMOJCdwnn+xYfNQMxJEMQ/s=';
 $cipher = "AES-256-CBC";
 
 $result = $conn->query('SELECT * FROM general');
