@@ -54,6 +54,14 @@ switch ($method) {
         getActiveReport();
         break;
 
+    case 'getSiteSettings':
+        getSiteSettings();
+        break;
+
+    case 'saveSiteSettings':
+        saveSiteSettings();
+        break;
+
     default:
         echo 'Please provide proper method!';
         break;
@@ -404,6 +412,54 @@ function getActiveReport() {
     }
 
     echo json_encode($all_devices);
+}
+
+function getSiteSettings() {
+    global $conn;
+
+    // Check if site settings are present
+    $result = $conn->query('SELECT * FROM site_settings');
+    $number_of_rows = $result->num_rows;
+    // If settings are not present, add defaults
+    // else echo
+    if ($number_of_rows == 0) {
+        $conn->query('INSERT INTO site_settings VALUES(60, 0)');
+        $result = $conn->query('SELECT * FROM site_settings');
+    }
+
+    $result->data_seek(0);
+    $row = $result->fetch_assoc();
+    
+    $shutdownValue = strcmp($row['shutdown'], '0') == 0 ? false : true;
+
+    $data = array(
+        'timeout' => $row['wait_timeout'],
+        'shutdown' => $shutdownValue
+    );
+
+    echo json_encode($data);
+}
+
+function saveSiteSettings() {
+    global $conn, $inputs;
+
+    if(!isset($inputs['data'])) {
+        die('You are doing wrong!');
+    } else {
+        $params = $inputs['data'];
+        if(!isset($params['timeout']) || !isset($params['shutdown'])) {
+            die('You are doing wrong!');
+        }
+    }
+
+    $timeout = $params['timeout'];
+    $shutdown = $params['shutdown'] ? 1 : 0;
+
+    $stmt = $conn->prepare('UPDATE site_settings SET wait_timeout=?, shutdown=?');
+    $stmt->bind_param('ii', $timeout, $shutdown);
+    $stmt->execute();
+
+    echo 'success';
 }
 
 $conn->close();
