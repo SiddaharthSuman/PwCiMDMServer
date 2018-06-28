@@ -342,6 +342,15 @@ function fetchDevicesForLocking(){
 
     $json = array();
     $json['devices'] = $devices;
+
+    $result = $conn->query('SELECT * FROM site_settings');
+    $result->data_seek(0);
+    $row = $result->fetch_assoc();
+    $shutdownValue = strcmp($row['shutdown'], '0') == 0 ? false : true;
+
+    $json['timeout'] = $row['wait_timeout'];
+    $json['shutdown'] = $shutdownValue;
+
     echo json_encode($json);
 }
 
