@@ -330,7 +330,7 @@ function fetchDeviceByTableId() {
 function fetchDevicesForLocking(){
     global $conn;
 
-    $result = $conn->query("SELECT device_name FROM devices WHERE id NOT IN ( SELECT device from reservations WHERE active<>0 )");
+    $result = $conn->query("SELECT device_name FROM devices WHERE verified<>0 AND id NOT IN ( SELECT device from reservations WHERE active<>0 )");
     $number_of_rows = $result->num_rows;
     $devices = array();
 
