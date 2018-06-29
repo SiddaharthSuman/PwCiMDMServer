@@ -43,7 +43,7 @@ function fetchAllReservations() {
      * LEFT OUTER JOIN users v 
      * ON r.previous_user=v.id
      */
-    $joiner_query = 'SELECT r.*, d.device_name, u.username, v.username as previousUsername FROM reservations r INNER JOIN devices d ON r.device=d.id INNER JOIN users u ON r.user=u.id LEFT OUTER JOIN users v ON r.previous_user=v.id';
+    $joiner_query = 'SELECT r.*, d.device_name, u.username, v.username as previousUsername FROM reservations r INNER JOIN devices d ON r.device=d.id INNER JOIN users u ON r.user=u.id LEFT OUTER JOIN users v ON r.previous_user=v.id ORDER BY r.timestamp DESC';
     $result = $conn->query($joiner_query);
     $num_rows = $result->num_rows;
     $array = array();
