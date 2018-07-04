@@ -18,6 +18,10 @@ switch ($method) {
         fetchActiveReservationsForUser();
         break;
 
+    case 'getAllActiveReservations':
+        fetchAllActiveReservations();
+        break;
+
     case 'reserveDevice':
         reserveDeviceForUser();
         break;
@@ -84,6 +88,27 @@ function fetchActiveReservationsForUser() {
     $deviceId = $params['deviceId'];
 
     $result = $conn->query("SELECT * FROM reservations WHERE active<>0 AND user IN (SELECT id FROM users WHERE device_id='". $deviceId ."')");
+    $num_rows = $result->num_rows;
+    $array = array();
+    for ($i=0; $i < $num_rows; $i++) { 
+        $result->data_seek($i);
+        $row = $result->fetch_assoc();
+        $reservation = array(
+            'id' => $row['id'], 
+            'device' => $row['device'],
+            'user' => $row['user'],
+            'startTime' => $row['start_time'],
+            'endTime' => $row['end_time']
+        );
+        $array[$i] = $reservation;
+    }
+    echo json_encode($array);
+}
+
+function fetchAllActiveReservations() {
+    global $conn;
+
+    $result = $conn->query('SELECT * FROM reservations WHERE active<>0');
     $num_rows = $result->num_rows;
     $array = array();
     for ($i=0; $i < $num_rows; $i++) { 
