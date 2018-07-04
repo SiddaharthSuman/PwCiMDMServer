@@ -69,7 +69,7 @@ switch ($method) {
 
 function fetchAllDevices() {
     global $conn;
-    $result = $conn->query('SELECT * FROM devices');
+    $result = $conn->query('SELECT * FROM devices ORDER BY device_name');
     $num_rows = $result->num_rows;
     $array = array();
     for ($i=0; $i < $num_rows; $i++) { 
