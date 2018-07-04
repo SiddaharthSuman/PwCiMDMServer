@@ -402,7 +402,7 @@ function saveDeviceStatusReport(){
 function getActiveReport() {
     global $conn;
 
-    $result = $conn->query("SELECT d.id, d.device_name, a.status, a.timestamp FROM active_report a RIGHT OUTER JOIN devices d ON a.device_name = d.device_name");
+    $result = $conn->query("SELECT d.id, d.device_name, a.status, a.timestamp FROM active_report a RIGHT OUTER JOIN devices d ON a.device_name = d.device_name ORDER BY d.device_name");
     $number_of_rows = $result->num_rows;
 
     $all_devices = array();
