@@ -377,9 +377,9 @@ function saveDeviceStatusReport(){
     $deviceId = $row['id'];
 
     // Query to insert with fetched device id
-    $stmt = $conn->prepare('INSERT INTO report(device_id, device_name, status) VALUES(?,?,?)');
-    $stmt->bind_param('iss', $deviceId, $deviceName, $status);
-    $stmt->execute();
+    // $stmt = $conn->prepare('INSERT INTO report(device_id, device_name, status) VALUES(?,?,?)');
+    // $stmt->bind_param('iss', $deviceId, $deviceName, $status);
+    // $stmt->execute();
 
     // Query to check if device is present in active report
     $result = $conn->query("SELECT id FROM active_report WHERE device_id='" . $deviceId . "'");
