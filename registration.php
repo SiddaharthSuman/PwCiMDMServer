@@ -19,16 +19,8 @@ switch ($method) {
         loginWebUser();
         break;
 
-    case 'getAllActiveReservations':
-        fetchAllActiveReservations();
-        break;
-
-    case 'reserveDevice':
-        reserveDeviceForUser();
-        break;
-    
-    case 'releaseDevice':
-        releaseDevice();
+    case 'checkSessionId':
+        checkSessionId();
         break;
 
     default:
@@ -77,6 +69,83 @@ function registerWebUser() {
         }
     } else {
         echo 'The username or password you have entered has illegal characters in it, please enter valid data!';
+    }
+}
+
+function loginWebUser() {
+    global $conn, $inputs;
+    // check if username is set
+    if(!isset($inputs['data'])) {
+        die('You are doing wrong!');
+    } else {
+        $params = $inputs['data'];
+        if(!isset($params['username'])) {
+            die('You are doing wrong!');
+        }
+    }
+
+    $username = $params['username'];
+    $password = $params['password'];
+
+    // sanitize username & password entered
+    $mysqlEscapedUsername = mysqli_real_escape_string($conn, $username);
+    $htmlFormattedUsername = htmlentities($mysqlEscapedUsername);
+
+    $mysqlEscapedPassword = mysqli_real_escape_string($conn, $password);
+    $htmlFormattedPassword = htmlentities($mysqlEscapedPassword);
+
+    if($username === $htmlFormattedUsername && $password === $htmlFormattedPassword) {
+        
+        // Decrypt the password and check in db
+
+        $encrypted_pass = encrypt($password);
+        
+        $result = $conn->query("SELECT * FROM web_users WHERE username='".$username."' AND password='". $encrypted_pass ."'");
+        $num_rows = $result->num_rows;
+    
+        if ($num_rows !== 0) {
+            // send an encrypted form of username and the login time
+            date_default_timezone_set('Asia/Kolkata');
+            $dt = date('d-m-Y H:i:s');
+            $UserSessionData = $username . ' ' . $dt;
+            $sessionId = encrypt($UserSessionData);
+            echo "{ \"code\": \"" . $sessionId . "\" }";
+        } else {
+            echo 'The username or password you have entered is incorrect!';
+        }
+    } else {
+        echo 'The username or password you have entered has illegal characters in it, please enter valid data!';
+    }
+}
+
+function checkSessionId() {
+    global $conn, $inputs;
+    // check if username is set
+    if(!isset($inputs['data'])) {
+        die('You are doing wrong!');
+    } else {
+        $params = $inputs['data'];
+        if(!isset($params['sessionId'])) {
+            die('You are doing wrong!');
+        }
+    }
+
+    $enc_sessionId = $params['sessionId'];
+    // Decrypt the session and check in db
+
+    $decrypted_session = decrypt($enc_sessionId);
+    $userdata = explode(" ", $decrypted_session);
+    if(count($userdata) === 3) {
+        $username = $userdata[0];
+        $result = $conn->query("SELECT * FROM web_users WHERE username='".$username."'");
+        $num_rows = $result->num_rows;
+        if ($num_rows !== 0) {
+            echo 'true';
+        } else {
+            echo 'false';
+        }
+    } else {
+        echo 'false';
     }
 }
 
