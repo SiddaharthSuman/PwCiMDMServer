@@ -104,12 +104,32 @@ function loginWebUser() {
         $num_rows = $result->num_rows;
     
         if ($num_rows !== 0) {
+            $result->data_seek(0);
+            $row = $result->fetch_assoc();
+            // First check if user has been activated or not
+            if(strcmp($row['active'], '0') == 0) {
+                die('This account has not been activated yet. Please contact the administrator!');
+            }
+
+            $userdata = array();
+            $user = array(
+                'id' => $row['id'], 
+                'username' => $row['username'],
+                'linkedUserId' => $row['linked_user_id']
+            );
+
+            $userdata['user'] = $user;
+
             // send an encrypted form of username and the login time
             date_default_timezone_set('Asia/Kolkata');
             $dt = date('d-m-Y H:i:s');
             $UserSessionData = $username . ' ' . $dt;
             $sessionId = encrypt($UserSessionData);
-            echo "{ \"code\": \"" . $sessionId . "\" }";
+            // echo "{ \"code\": \"" . $sessionId . "\" }";
+
+            $userdata['code'] = $sessionId;
+
+            echo json_encode($userdata);
         } else {
             echo 'The username or password you have entered is incorrect!';
         }
@@ -140,7 +160,19 @@ function checkSessionId() {
         $result = $conn->query("SELECT * FROM web_users WHERE username='".$username."'");
         $num_rows = $result->num_rows;
         if ($num_rows !== 0) {
-            echo 'true';
+            $result->data_seek(0);
+            $row = $result->fetch_assoc();
+            // First check if user has been activated or not
+            if(strcmp($row['active'], '0') == 0) {
+                die('false');
+            }
+
+            $user = array(
+                'id' => $row['id'], 
+                'username' => $row['username'],
+                'linkedUserId' => $row['linked_user_id']
+            );
+            echo json_encode($user);
         } else {
             echo 'false';
         }

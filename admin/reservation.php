@@ -1,5 +1,6 @@
 <?php
-header('Access-Control-Allow-Origin: *'); 
+header('Access-Control-Allow-Origin: *');
+require('../generalEncryptorDecryptor.php');
 require('../dbhelper.php');
 
 $inputs = json_decode(file_get_contents('php://input'), true);
@@ -18,6 +19,10 @@ switch ($method) {
         fetchActiveReservationsForUser();
         break;
 
+    case 'getActiveWebReservations':
+        fetchActiveReservationsForWebUser();
+        break;
+
     case 'getAllActiveReservations':
         fetchAllActiveReservations();
         break;
@@ -28,6 +33,10 @@ switch ($method) {
     
     case 'releaseDevice':
         releaseDevice();
+        break;
+
+    case 'getNewCode':
+        getNewCode();
         break;
 
     default:
@@ -88,6 +97,47 @@ function fetchActiveReservationsForUser() {
     $deviceId = $params['deviceId'];
 
     $result = $conn->query("SELECT * FROM reservations WHERE active<>0 AND user IN (SELECT id FROM users WHERE device_id='". $deviceId ."')");
+    $num_rows = $result->num_rows;
+    $array = array();
+    for ($i=0; $i < $num_rows; $i++) { 
+        $result->data_seek($i);
+        $row = $result->fetch_assoc();
+        $reservation = array(
+            'id' => $row['id'], 
+            'device' => $row['device'],
+            'user' => $row['user'],
+            'startTime' => $row['start_time'],
+            'endTime' => $row['end_time']
+        );
+        $array[$i] = $reservation;
+    }
+    echo json_encode($array);
+}
+
+function fetchActiveReservationsForWebUser() {
+    global $conn, $inputs;
+
+    if(!isset($inputs['data'])) {
+        die('You are doing wrong!');
+    } else {
+        $params = $inputs['data'];
+        if(!isset($params['id'])) {
+            die('You are doing wrong!');
+        }
+    }
+
+    $userId = $params['id'];
+    $linkedId = $params['linkId'];
+
+    if ($linkedId === NULL) {
+        $result = $conn->query("SELECT * FROM reservations WHERE active<>0 AND webuser_id_used<>0 AND user='". $userId ."'");
+    } else {
+        // Check with union
+        $q1 = "SELECT * FROM reservations WHERE active<>0 AND webuser_id_used<>0 AND user='". $userId ."'";
+        $q2 = "SELECT * FROM reservations WHERE active<>0 AND webuser_id_used=0 AND user='". $linkedId ."'";
+        $result = $conn->query($q1 . " UNION " . $q2);
+    }
+
     $num_rows = $result->num_rows;
     $array = array();
     for ($i=0; $i < $num_rows; $i++) { 
@@ -206,6 +256,35 @@ function releaseDevice() {
 
     echo 'success';
 
+}
+
+function getNewCode() {
+    global $inputs;
+
+    if(!isset($inputs['data'])) {
+        die('You are doing wrong!');
+    } else {
+        $params = $inputs['data'];
+        if(!isset($params['sessionId'])) {
+            die('You are doing wrong!');
+        }
+    }
+
+    $sessionId = $params['sessionId'];
+
+    $decrypted_session = decrypt($sessionId);
+    $userdata = explode(" ", $decrypted_session);
+    if(count($userdata) === 3) {
+        $username = $userdata[0];
+        date_default_timezone_set('Asia/Kolkata');
+        $dt = date('d-m-Y H:i:s');
+        $UserSessionData = $username . ' ' . $dt;
+        $code = encrypt($UserSessionData);
+
+        echo $code;
+    } else {
+        echo 'Some error occurred in getting new code';
+    }
 }
 
 $conn->close();
