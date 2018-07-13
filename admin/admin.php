@@ -30,6 +30,10 @@ switch ($method) {
         getUsers();
         break;
 
+    case 'getAllWebUsers':
+        getWebUsers();
+        break;
+
     case 'deviceRegistrationStatus':
         checkDeviceRegistration();
         break;
@@ -228,6 +232,29 @@ function getUsers() {
             'deviceManufacturer' => $row['device_manufacturer'],
             'active' => $activeValue, 
             'dateAdded' => $row['date_added']
+        );
+        $array[$i] = $user;
+    }
+
+    echo json_encode($array);
+}
+
+function getWebUsers() {
+    global $conn;
+
+    $result = $conn->query('SELECT * FROM web_users WHERE active=0');
+    $num_rows = $result->num_rows;
+    $array = array();
+    for ($i=0; $i < $num_rows; $i++) { 
+        $result->data_seek($i);
+        $row = $result->fetch_assoc();
+        // $activeValue = strcmp($row['active'], '0') == 0 ? false : true;
+        $user = array(
+            'id' => $row['id'],
+            'username' => $row['username'],
+            'linkedUserId' => $row['linked_user_id'],
+            'active' => false, 
+            'timestamp' => $row['timestamp']
         );
         $array[$i] = $user;
     }
