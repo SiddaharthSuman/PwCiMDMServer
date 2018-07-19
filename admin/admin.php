@@ -66,6 +66,10 @@ switch ($method) {
         saveSiteSettings();
         break;
 
+    case 'linkMobileAndWebUser':
+        linkMobileAndWebUser();
+        break;
+
     default:
         echo 'Please provide proper method!';
         break;
@@ -223,6 +227,7 @@ function getUsers() {
         $result->data_seek($i);
         $row = $result->fetch_assoc();
         $activeValue = strcmp($row['active'], '0') == 0 ? false : true;
+        $isWebValue = strcmp($row['is_web_user'], '0') == 0 ? false : true;
         $user = array(
             'id' => $row['id'], 
             'deviceId' => $row['device_id'],
@@ -230,7 +235,8 @@ function getUsers() {
             'deviceName' => $row['device_name'],
             'deviceModel' => $row['device_model'],
             'deviceManufacturer' => $row['device_manufacturer'],
-            'active' => $activeValue, 
+            'active' => $activeValue,
+            'isWebUser' => $isWebValue,
             'dateAdded' => $row['date_added']
         );
         $array[$i] = $user;
@@ -242,18 +248,18 @@ function getUsers() {
 function getWebUsers() {
     global $conn;
 
-    $result = $conn->query('SELECT * FROM web_users WHERE active=0');
+    $result = $conn->query('SELECT * FROM web_users');
     $num_rows = $result->num_rows;
     $array = array();
     for ($i=0; $i < $num_rows; $i++) { 
         $result->data_seek($i);
         $row = $result->fetch_assoc();
-        // $activeValue = strcmp($row['active'], '0') == 0 ? false : true;
+        $activeValue = strcmp($row['active'], '0') == 0 ? false : true;
         $user = array(
             'id' => $row['id'],
             'username' => $row['username'],
             'linkedUserId' => $row['linked_user_id'],
-            'active' => false, 
+            'active' => $activeValue, 
             'timestamp' => $row['timestamp']
         );
         $array[$i] = $user;
@@ -496,6 +502,75 @@ function saveSiteSettings() {
     $stmt->execute();
 
     echo 'success';
+}
+
+function linkMobileAndWebUser() {
+    global $conn, $inputs;
+
+    if(!isset($inputs['data'])) {
+        die('You are doing wrong!');
+    } else {
+        $params = $inputs['data'];
+        if(!isset($params['muser']) || !isset($params['wuser'])) {
+            die('You are doing wrong!');
+        }
+    }
+
+    $mobile_user = $params['muser'];
+    $web_user = $params['wuser'];
+
+    // First link web
+    $stmt = $conn->prepare('UPDATE web_users SET linked_user_id=?, active=1 WHERE id=?');
+    $stmt->bind_param('ii', $mobile_user["id"], $web_user["id"]);
+    $stmt->execute();
+    // then activate mobile
+    $stmt = $conn->prepare('UPDATE users SET is_web_user=1 WHERE id=?');
+    $stmt->bind_param('i', $mobile_user["id"]);
+    $stmt->execute();
+    // then send updated data
+    $master_array = array();
+    $result = $conn->query('SELECT * FROM users');
+    $num_rows = $result->num_rows;
+    $array = array();
+    for ($i=0; $i < $num_rows; $i++) { 
+        $result->data_seek($i);
+        $row = $result->fetch_assoc();
+        $activeValue = strcmp($row['active'], '0') == 0 ? false : true;
+        $isWebValue = strcmp($row['is_web_user'], '0') == 0 ? false : true;
+        $user = array(
+            'id' => $row['id'], 
+            'deviceId' => $row['device_id'],
+            'username' => $row['username'],
+            'deviceName' => $row['device_name'],
+            'deviceModel' => $row['device_model'],
+            'deviceManufacturer' => $row['device_manufacturer'],
+            'active' => $activeValue,
+            'isWebUser' => $isWebValue,
+            'dateAdded' => $row['date_added']
+        );
+        $array[$i] = $user;
+    }
+    $master_array['muser'] = $array;
+    
+    $result = $conn->query('SELECT * FROM web_users');
+    $num_rows = $result->num_rows;
+    $array = array();
+    for ($i=0; $i < $num_rows; $i++) { 
+        $result->data_seek($i);
+        $row = $result->fetch_assoc();
+        $activeValue = strcmp($row['active'], '0') == 0 ? false : true;
+        $user = array(
+            'id' => $row['id'],
+            'username' => $row['username'],
+            'linkedUserId' => $row['linked_user_id'],
+            'active' => $activeValue, 
+            'timestamp' => $row['timestamp']
+        );
+        $array[$i] = $user;
+    }
+    $master_array['wuser'] = $array;
+
+    echo json_encode($master_array);
 }
 
 $conn->close();
